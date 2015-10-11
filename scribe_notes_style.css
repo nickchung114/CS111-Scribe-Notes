@@ -1,0 +1,170 @@
+/* colors
+
+#FF8000 - orange
+#000305 - dark grey
+#E6E6E6 - light grey
+#FFFFFF - white
+#0000EE - blue (html)
+#FF2828 - red
+#FF00FF - magenta
+170844 - dark blue
+*/
+
+body {
+	background-color: #E6E6E6;
+	color: #170844 !important;
+	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size: 87.5%; /* base font size is 14px */
+	line-height: 1.2;
+	text-align:left;
+	margin: 0 auto;
+	width: 85%;
+}
+img {
+	max-width:600px;
+	margin: auto;
+	width: 100%;
+	display: block;
+}
+code {
+	background-color: #f8f8f8;
+	border: 1px solid #ddd;
+	font-size: 13px;
+	line-height: 19px;
+	overflow: auto;
+	padding: 6px 10px;
+	border-radius: 3px;
+	margin: 10px 0;
+	display: block;
+}
+.code_inline{
+	padding: 3px 5px;
+	display: inline;
+}
+
+div > ul, ol, p{ /* prevent formatting nested ul's */
+	margin-top: 5px;
+	margin-bottom: 5px;
+}
+div > ul, ol { /* prevent formatting nested ul's */
+	font-size: 91%;
+}
+p a {
+	text-decoration: none !important;
+}
+h2, h3 {
+	color: #000305;
+}
+
+pre > code {
+    white-space: pre;
+    /*margin-top: -1.00em;*/
+    display: block;
+}
+
+/* http://www.webdesignerdepot.com/2012/11/how-to-create-a-simple-css3-tooltip/ */
+.tooltip{
+    display: inline;
+    position: relative;
+}
+.tooltip:hover:after{
+	/* opacity: .95;*/ 
+    background: #333;
+    background: rgba(0,0,0,.9);
+    border-radius: 5px;
+    bottom: 26px;
+    color: #fff;
+    content: attr(title);
+    left: 20%;
+    padding: 5px 15px;
+    position: absolute;
+    z-index: 98;
+	width: 77px;/*220px*/
+}
+.tooltip:hover:before{
+    border: solid;
+    border-color: #333 transparent;
+    border-width: 6px 6px 0 6px;
+    bottom: 20px;
+    content: "";
+    left: 50%;
+    position: absolute;
+    z-index: 99;
+}
+
+a:link { /* unvisited link */
+    color: #FF8000;
+}
+a:visited { /* visited link */
+    color: #FF00FF;
+}
+a:hover { /* mouse over link */
+    color: #FF2828;
+}
+a:active { /* selected link */
+    color: #0000EE;
+}
+nav ul {
+    list-style-type: none;
+	padding: 0;
+}
+ul > li > ul {
+	padding: 0px 0px 0px 40px;
+}
+u b a:link{
+	color: #0;
+}
+#mainHeader {
+	/*font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;*/
+	/* Helvetica, arial, freesans, clean, sans-serif; */
+	/* font-family: Lyon, 'Lucida Sans Unicode'; */
+	color: #000305;
+	text-align: center;
+}
+.container {
+	text-decoration: none;
+	line-height: 22px;
+	border-radius: 5px;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	background-color: #FFFFFF;
+	padding: 0.25% 20px 1.75% 40px;
+	margin-top: 1%;
+}
+.title_bar { /* FUUUU why doesn't margin look good */
+	margin: 7px 0 3px 0;
+	height: 30px;
+	border-bottom: solid 1px; /* dunno if this looks good */
+}
+.postheader { /* title of each section */
+	margin: 5px 0 0 0;
+	float: left;
+}
+.button {
+	margin: 5px 0 0 0;
+	float: right;
+	cursor: pointer;
+	width: 20px;
+	text-align: center;
+	font-size: 200%;
+}
+.box {
+	margin: 0 25px 0 0;
+	text-align: justify;
+}
+.noselect {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+@media only screen and (min-width: 10px) and (max-width: 600px) {
+
+img {
+	width: 430px; /* 600*.85 - 2*40
+}
+
+}

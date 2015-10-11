@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- IMPROVEMENTS TO MAKE:
+		go-to-top button
+-->
+<head>
+	<title>Performance Improvement and Modularity - CS111 W15 Scribe Notes</title>
+	<meta charset="utf-8" />
+	
+	<link rel="stylesheet" href="scribe_notes_style.css" type="text/css" />
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+	<!--script type="text/javascript" src="http://arrow.scrolltotop.com/arrow66.js"></script-->
+	<script type="text/javascript" src="sn_lec3.js"></script>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+
+<body>
+	<header id="mainHeader"> <!--Header-->
+			<h1>Lecture #3: Improving Our Program</h1>
+			<h2>CS 111 - Winter 2015</h2>
+			<h3>Scribed by: Ashutosh Shiledar, Nicholas Chung, Jason Yoon, Derek Nguyen</h3>
+	</header>
+	
+	<div class="container"> <!--Contents-->
+		<div class="title_bar">
+			<h2 class="postheader">Contents</h2>
+			<div class="button noselect">-</div>
+		</div>
+		<div class="box">
+			<nav><ul>
+				<li><a class="smoothscroll" href="#perfimpr">Performance Improvement</a>
+					<ul>
+						<li><a class="smoothscroll" href="#doubbuff">1. Double Buffering</a></li>
+						<li><a class="smoothscroll" href="#buffsize">2. Increased Buffer Size</a></li>
+						<li><a class="smoothscroll" href="#dma">3. Direct Memory Access (DMA)</a></li>
+					</ul>
+				</li>
+				<li><a class="smoothscroll" href="#modnabs">Modularity & Abstraction</a>
+					<ul>
+						<li><a class="smoothscroll" href="#mmwm">1. Measuring Modularity with Metrics</a></li>
+						<li><a class="smoothscroll" href="#implmod">2. Implementing Modularity</a></li>
+						<li><a class="smoothscroll" href="#recursion">3. A Recursive Example</a></li>
+						<li><a class="smoothscroll" href="#hardmod">4. Hard Modularity</a></li>
+					</ul>
+				</li>
+			</ul></nav>
+		</div>
+	</div>
+	
+	<div class="container"> <!--Performance Improvement-->
+		<div class="title_bar">
+			<h2 class="postheader" id="perfimpr">Performance Improvement</h2>
+			<div class="button noselect">-</div>
+		</div>
+		<div class="box">
+			<p>
+				In the previous lecture, we completed the basic word count (wc) program designed to give the user the number of words in a file upon turning on the computer. However, the wc program has not been optimized, and it currently repeats the following instructions until the overall task is complete: 
+			</p>
+			<ol>
+				<li>
+					the CPU asks the disk controller if it’s ready
+				</li>
+				<li>
+					when the disk controller signals ready, the CPU reads some portion of a sector on the disk to fill the buffer (RAM)
+				</li>
+				<li>
+					the data read into the buffer is processed
+				</li>
+				<li>
+					once all the data in the buffer is processed, return to step 1 
+				</li>
+			</ol>
+			<p>
+				To improve the performance of the application, we will consider several options to improve the speed of the process in this lecture. 
+			</p>
+		</div>
+	</div>
+
+	<div class="container"> <!--Double Buffering-->
+		<div class="title_bar">
+			<h3 class="postheader" id="doubbuff">1. Double Buffering</h3>
+			<div class="button noselect">-</div>
+		</div>
+		<div class="box">
+			<p>
+				Originally, the program cannot begin processing data until the necessary data is read from the disk into the buffer and cannot continue reading data until the data in the buffer is completely processed. 
+					<a title="learn more!" class="tooltip" target="_blank"
+					href="http://wiki.osdev.org/Double_Buffering"
+					>
+						<b><span title=""> <!-- prevents browser from displaying another tooltip -->
+							Double buffering
+						</span></b>
+					</a>
+				is a technique that allows the application to read in data from the disk (via the disk controller) while processing the data in the buffer (RAM). After the first read, the application can process the data currently in the buffer while reading the data in the disk into a separate buffer. To maximize efficiency of double buffering, the read and process times should be as similar as possible; if the two times are equal, then the speed of the program can be halved. The following diagrams – under the assumption that reading data from the disk takes longer than processing the data – illustrate the difference between the original program with and without double buffering: 
+			</p>
+			<img src="img/double_buffering.png">
+		</div>
+	</div>
+	
+	<div class="container"> <!--Increased Buffer Size-->
+		<div class="title_bar">
+			<h3 class="postheader" id="buffsize">2. Increased Buffer Size</h3>
+			<div class="button noselect">-</div>
+		</div>
+		<div class="box">
+			<p>
+				With double buffering, we can decrease the time it takes the program to complete; however, we have only considered adding a buffer. What effect would increasing the buffer length have on the performance of the program? Well, we originally read in only the bits we need from the disk, which may not necessarily be continuous on the disk. We can make use of a larger buffer size by reading all the bits between those that we need immediately to reduce 
+					<a title="learn more!" class="tooltip" target="_blank"
+					href="https://www.princeton.edu/~achaney/tmve/wiki100k/docs/Rotational_delay.html"
+					>
+						<span title=""> <!-- prevents browser from displaying another tooltip -->
+							Rotational latency
+						</span>
+					</a>
+				(caused by waiting for the bits on the disk that we need to rotate to the read head). 
+			</p>
+		</div>
+	</div>
+	
+	<div class="container"> <!--Direct Memory Access (DMA)-->
+		<div class="title_bar">
+			<h3 class="postheader" id="dma">3. Direct Memory Access (DMA)</h3>
+			<div class="button noselect">-</div>
+		</div>
+		<div class="box">
+			<p>
+				If we recall from the previous lecture, the CPU will ask for data from the disk via the disk controller and then immediately transfer the data into in the buffer (this process is called 
+					<a title="learn more!" class="tooltip" target="_blank"
+					href="http://en.wikipedia.org/wiki/Programmed_input/output"
+					>
+						<span title=""> <!-- prevents browser from displaying another tooltip -->
+							programmed I/O
+						</span>
+					</a>
+				or PIO). For example, <code class="code_inline">insl</code> is one such command that requires the data be passed through the CPU during its journey from the disk to RAM. In contrast, we can use another technique known as 
+					<a title="learn more!" class="tooltip" target="_blank"
+					href="https://www.princeton.edu/~achaney/tmve/wiki100k/docs/Direct_memory_access.html"
+					>
+						<b><span title=""> <!-- prevents browser from displaying another tooltip -->
+							direct memory access
+						</span></b>
+					</a>
+				(DMA) to remove the CPU as the middleman. In DMA, the CPU will schedule the disk controller to grab the desired data from the disk and then pass the data through the bus and into the RAM. Afterwards, the CPU can query the disk about the status of the data buffering and carry on with its tasks once the necessary data has been properly stored. The following diagrams contrast PIO and DMA:
+			</p>
+			<img src="img/DMA.png">
+		</div>
+	</div>
+	
+	<div class="container"> <!--Modularity & Abstraction-->
+		<div class="title_bar">
+			<h2 class="postheader" id="modnabs">Modularity & Abstraction</h2>
+			<div class="button noselect">-</div>
+		</div>
+		<div class="box">
+			<p>
+				<a title="learn more!" class="tooltip" target="_blank"
+				href="http://en.wikipedia.org/wiki/Modular_programming"
+				>
+					<span title=""> <!-- prevents browser from displaying another tooltip -->
+						<b>Modularity</b>
+					</span>
+				</a>
+				describes the extent of a partition on a system into smaller components, which can interact with each other to perform the functionalities of the original system. If modularity breaks a system into smaller components that – in the end – accomplish the same tasks, why would we need to spend the effort to modularize our systems? Well, modularity comes with some benefits, one of which is reducing debugging time. Since the
+				<a title="learn more!" class="tooltip" target="_blank"
+				href="http://www.jamesshuggins.com/h/tek1/first_computer_bug.htm"
+				><span title="" ><!-- prevents browser from displaying another tooltip -->
+					moth in the machine,
+				</span></a>
+				debugging has been a critical issue that programmers around the world have had to face, and many spend much of their time trying to remove issues or “bugs” from their code. 
+				<i>We will illustrate how modularity can help reduce the time it takes to reduce to debug a block of code.</i>
+			</p>
+			<p>
+				In order to simplify the illustration, we're assuming several facts:
+			</p>
+			<ul>
+				<li>
+					in the block of code, there are N lines of code and K modules
+				</li>
+				<li>
+					the number of bugs is proportional to N
+				</li>
+				<li>
+					the time to find a single bug is proportional to N
+				</li>
+			</ul>
+			<p>
+				For the initial case (K = 1), the code is implemented without modularity, the time it takes to debug the block of code is proportional to <b>N^2</b>. However, as K increases, the time it takes to debug is proportional to the product of:
+			</p>
+			<ul>
+				<li>
+					N/K (proportionality of the number of bugs per module)
+				</li>
+				<li>
+					N/K (proportionality of the time to find a single bug)
+				</li>
+				<li>
+					K (number of modules)
+				</li>
+			</ul>
+			<p>
+				Thus, the total time it takes to debug is proportional to <b>N^2/K</b>, which a factor of K smaller than the original time. Unfortunately, there are many complications to the debugging beyond the fact that the initial assumptions on proportionalities are underestimating the time it takes to debug a number of lines of code. These complications include:
+			</p>
+			<ul>
+				<li>
+					Bugs may not be localized in a module
+				</li>
+				<li>
+					Bugs in a module may be created by another module
+				</li>
+				<li>
+					More modules implies more lines of code than the original block of code
+				</li>
+			</ul>
+			<p>
+				Nevertheless, this simplified example gives insight on how modularity can hasten the debugging process.  
+			</p>
+		</div>
+	</div>
+	
+	<div class="container"> <!--Measuring Modularity with Metrics (alliteration :D)-->
+		<div class="title_bar">
+			<h3 class="postheader" id="mmwm">1. Measuring Modularity with Metrics</h3>
+			<div class="button noselect">-</div>
+		</div>
+		<div class="box">
+			<p>
+				In order to measure the effectiveness of modularity on a system – or, in our case, a wc program – we define metrics to describe how well modular boundaries provide interaction between the environment and module itself (known as 
+				<a title="learn more!" class="tooltip" target="_blank"
+					href="http://rsif.royalsocietypublishing.org/content/6/32/257#sec-5"
+					>
+						<b><span title=""> <!-- prevents browser from displaying another tooltip -->
+							abstraction
+						</span></b>
+					</a>
+				): <!-- poor thing -->
+			</p>
+			<ul>
+				<li>
+					Performance: A downside of using modularity is that the inherent boundaries create overhead and latency due to call and ret commands. Also, modularity introduces “secrets”, meaning that modules do not know how other modules are implemented and cannot capitalize on more efficient methods.
+				</li>
+				<li>
+					Robustness: We can measure how robust a modular system is by observing whether failures are isolated to individual modules.
+				</li>
+				<li>
+					Lack of Assumptions / Flexibility / Neutrality: Describes how many constraints the system imposes on the user. 
+				</li>
+				<li>
+					Simplicity: How easily can the user use and learn the system/program?
+				</li>
+			</ul>
+			<p> <!-- read_ide_sector explanation -->
+				To demonstrate the effect of metrics on how we define our modular parts, let’s look at an integral function for the BIOS, the boot loader, and our wc program: read_ide_sector. Ideally, we would like to make one function to satisfy the needs of the all three programs. There are several approaches we can take to modularize the read_ide_sector function. 
+				<ul>
+					<li>
+						In the BIOS: By having the boot loader and the wc program call the read_ide_sector function in the BIOS, we make the BIOS the basis of developing the boot loader and the wc program. However, systems will to continue grow more complicated and demand different functionalities, thus requiring updates. These updates may necessitate adjustments to the read_ide_sector (or any other function that is called from BIOS), but it is very tedious to alter the BIOS on a frequent basis. 
+					</li>
+					<li>
+						In the MBR (Master Boot Record): While placing the read_ide_sector in the MBR would allow for easier updates, it would be very limited to functionality because the MBR only have 512 bytes of memory. 
+					</li>
+					<li>
+						In the kernel (software): By implementing the read_ide_sector function in the software, it overcomes the previous issues of updating and limited size.
+					</li>
+					<li>
+						Simplicity: How easily can the user use and learn the system/program?
+					</li>
+				</ul>
+				Let’s take a look at how we can improve our implementation of this function. 
+			</p>
+			<p> <!-- continued; lots of code segments -->
+				The starting function takes two parameters – the sector number (int type) and the starting address (int type) of the buffer – and returns nothing (void type):
+				<code>
+					void read_ide_sector(int s, int a);
+				</code>
+				To improve, let’s allow the caller to specify the number of disks to read. Based on metrics, this would make the function (module) more complicated but also more flexible.
+				<code>
+					void read_sector(int disknum, int s, int a);
+				</code>
+				But, what happens if the read_sector fails to read properly? To solve this, we can have the function return an integer indicating how many sectors the function read, or a negative number to indicate it failed to read properly/anything. Also, let’s allow the caller to specify the number of sectors it wants to read from the disk.
+				<code>
+					int read_sector(int disknum, int s, int a, int nsecs);
+				</code>
+				Up to this point, we have been assuming the size of a sector. In order to be compatible with different disks, we should instead specify how many bytes we want from the disk. So, we change the sector number and number of sectors parameters into their byte counterparts. 
+				<code>
+					int read_bytes(int disknum, int byteoffset, int a, int nbytes);
+				</code>
+				<code>
+					ssize_t read(int fd, void *a, size_t nbytes);
+				</code>
+			</p>
+			<p> <!-- comparison between read_bytes and read -->
+				Comparing the read_bytes function to the read function (standard C function), we can see several similarities. Both function return signed integers meant to signify the number of bytes read (or to account for error). Parameter wise:
+				<ul>
+					<li>
+						‘fd’ indicates file description and serves a similar purpose to ‘disknum’;
+					</li>
+					<li>
+						‘a’ is a pointer to a char buffer (cast as a void *) and is similar to the ‘a’ in read_bytes; 
+					</li>
+					<li>
+						‘nbytes’ in both functions serve to state how many bytes are to be read in (though size_t describes the purpose of the parameter better since a number of bytes should be nonnegative)
+					</li>
+				</ul>
+				However, the read function lacks a byteoffset parameter to describe where in the disk the function should begin reading. This indicates that the read function operates at a higher level of abstraction and already knows where in the file to read. 
+			</p>
+		</div>
+	</div>
+	
+	<div class="container"> <!--Implementing Modularity-->
+		<div class="title_bar">
+			<h3 class="postheader" id="implmod">2. Implementing Modularity</h3>
+			<div class="button noselect">-</div>
+		</div>
+		<div class="box">
+			<p> <!-- no modularity -->
+				<b>You don’t.</b> Although it sounds absurd, code without modularity has its own set of benefits and consequences that may suit your needs:
+			</p>
+			<ul> <!-- continued -->
+				<li style="color:#47AE2B">
+					can capitalize on global variables
+				</li>
+				<li style="color:#47AE2B">
+					faster than modular code because it does not require call or ret commands
+				</li>
+				<li style="color:#DC1D00">
+					"spaghetti code”: all of your code is in 1 ‘main’ program
+					<ul><li style="color:#47AE2B">
+						corollary: no secrets; all parts of your code can capitalize on performance 
+					</li></ul>
+				</li>
+				<li style="color:#DC1D00">
+					hard to debug, understand/read, and change
+				</li>
+			</ul>
+			<p> <!-- function calls -->
+				Functions and function calls: We can divide a singular ‘main’ function into different functions that, if necessary, can be called again later in the program. Because the functions (lines of code) will remain the same during the program run-time, we can store the code instructions and constant variables from the disk into the same area of RAM. Furthermore, a majority of the remaining RAM will be used to store function calls and local variables. As more functions are called, they and their local variables are stored in smaller memory addresses (which is why we call the portion of RAM storing these function calls the ‘stack’). By implementing the memory as such, we create a caller-callee relationship in stack, where one function (caller) will call another function (callee), which – after completing its instructions – can return the program to the caller function (Note: recalling from CS33, the ‘call’ and ‘ret’ commands facilitate the movement of the stack and instruction pointers as well as the value of the return register [generally eax]). While functions provide a degree of modularity, they also come with a few issues, particularly regarding the caller-callee system:
+				<ul> <!-- issues with function calls -->
+					<li>
+						When the callee begins executing its instructions, the caller is at the complete whim of the callee; for example, the callee could change some of its caller’s local variables, then return to the caller without the caller ever noticing any tampering.
+					</li>
+					<li>
+						Also, the callee could loop forever or return to a different caller, thus preventing its original caller from completing its instructions.
+					</li>
+					<li>
+						On the other hand, the caller can push garbage/incorrect values into the registers for the callee to attempt to use.
+					</li>
+					<li>
+						The caller can move some arbitrary value into the stack pointer (say, 0), resulting in the callee attempting to modify data that might be read-only or necessary for another program. 
+					</li>
+				</ul>
+			</p>
+			<p>
+				In essence, functions require that there be an agreement amongst themselves to pass correct arguments, return to callers properly, and not tamper with the caller’s variables. We call this 
+					<a title="learn more!" class="tooltip" target="_blank"
+					href="https://books.google.com/books?id=I-NOcVMGWSUC&pg=PA149&lpg=PA149&dq=%22soft+modularity%22+-cs111&source=bl&ots=7WCML9_V1r&sig=CFyQ_pCsphUGo7v-lw0gb59meQY&hl=en&sa=X&ei=3768VMPqEMegyAThwoLgCg&ved=0CCYQ6AEwAQ#v=onepage&q=%22soft%20modularity%22%20-cs111&f=false"
+					>
+						<span title=""> <!-- prevents browser from displaying another tooltip -->
+							<b>soft modularity</b>
+						</span>
+					</a>
+				because every module must work properly in order for the entire application to work. Like a structure made of toothpicks, the entire system will crash if a single module is amiss. 
+			</p>
+		</div>
+	</div>
+	
+	<div class="container"> <!--A Recursive Example (fact)-->
+		<div class="title_bar">
+			<h3 class="postheader" id="recursion">3. A Recursive Example</h3>
+			<div class="button noselect">-</div>
+		</div>
+		<div class="box">
+			<p> <!-- 'fact' introduction -->
+				To illustrate functions and function calls, let’s look at a simple recursive function – fact – that computes the factorial of n:
+			</p>
+			<pre><code>int fact(int n) {
+	return n ? n * fact(n-1) : 1;
+}</code></pre>
+			<p>
+				Already, there’s a glaring error: if n is negative, the function will recursively call until the stack attempts to alter read-only memory, resulting in a system crash / undefined behavior. Here’s an improved version:
+			</p>
+			<pre><code>int fact_improved(int n) {
+	if(n < 0) return 0;
+	return n ? n * fact(n-1) : 1;
+}</code></pre></code></pre> <!-- need two sets to minimize in notepad++ (one set of closing tags works in html) -->
+			<pre><code>caller:<!-- assembly code-->
+	…
+	call fact			% pushes the address of the next instruction onto the stack
+					% jmp to the address specified by fact
+	…
+…
+fact:
+	pushl	%ebp			% push base ptr onto the stack
+	movl	$1, %eax		% move 1 into eax register
+	movl	%esp, %ebp		% move old stack ptr into the base ptr
+	subl	$8, %esp		% moves the stack ptr 8 bytes down (grows substack by 8)
+	movl	%ebx, -4(%ebp)		% saves the value in ebx in the 4-byte memory directly below the ebp ptr (callee save protocol)
+	movl	8(%ebp), %ebx		% moves the parameter n from the caller into the ebx register
+	testl	%ebx, %ebx		% checks if n is 0 (computes %ebx & %ebx)
+	jne	.L5			% if n != 0, jump to label .L5
+.L1:
+	movl	-4(%ebp), %ebx		% moves the old value (saved earlier) back into the ebx register
+	movl	%ebp, $esp		% moves the stack ptr to point at the old ebp
+	popl	%ebp			% pops the value at the address pointed at by ebp into ebp and adds 4 to esp 
+					% ^^(effectively, ebp points back to the previous caller’s substack’s base and esp now points at the ret addr to the next instr of the caller)
+	ret				% pops the return address into the eip register, adds 4 to esp
+.L5:
+	leal	-1(%ebx), %eax		% address arithmetic: stores n-1 into eax
+	movl	%eax, (%esp)		% stores argument (n-1) in preparation for function call
+	call	fact			% creates another substack
+	imull	%ebx, %eax		% stores the product of the values in ebx and eax in eax
+	jmp	.L1			% jumps to label .L1</pre></code>
+			<p>
+				As we mentioned before, there are issues in the caller-callee protocol. In assembly code, these issues might manifest in a form similar to the following:
+			</p>
+			<pre><code>	movl %esp, 100(%esp)			% callee changes caller’s code</code></pre>
+			<pre><code>.L2:
+	jmp .L2					% infinite loop</code></pre>
+
+		</div>
+	</div>
+	
+	<div class="container"> <!--Hard Modularity-->
+		<div class="title_bar">
+			<h3 class="postheader" id="hardmod">4. Hard Modularity</h3>
+			<div class="button noselect">-</div>
+		</div>
+		<div class="box">
+			<p>
+				To ensure that our modules are airtight, we will use 
+				<a title="learn more!" class="tooltip" target="_blank"
+					href="https://books.google.com/books?id=yFntjiP23kQC&pg=PA205&lpg=PA205&dq=hard+modularity&source=bl&ots=TDRAX1rTlP&sig=aSoC1nx6LO3fgyxeAuufka626xc&hl=en&sa=X&ei=58-8VKbGC5KuyATprICwAg&ved=0CEYQ6AEwBQ#v=onepage&q=hard%20modularity&f=false"
+				>
+					<b><span title=""> <!-- prevents browser from displaying another tooltip -->
+						hard modularity.
+					</span></b>
+				</a>
+				There are two major ways to implement hard modularity.
+			</p>
+			<p>
+				1) Multiple machines: by using multiple machines (and relaying data using message passing), we can avoid our machine from crashing by letting another machine run the code. Should the code result in undefined behavior or crash the computer, our machine will still be safe and can continue to run instructions. 
+			</p>
+			<p>
+				2) The other method is to use 
+				<a title="learn more!" class="tooltip" target="_blank"
+					href="http://en.wikipedia.org/wiki/Virtualization"
+				>
+					<b><span title=""> <!-- prevents browser from displaying another tooltip -->
+						virtualization,
+					</span></b>
+				</a>
+				where we implement the hardware/firmware of an operating system within a machine. The virtual machine (VM) will be able to perform most of the functionalities of a regular system on top of the computing architecture of the machine running the VM. 
+			</p>
+		</div>
+	</div>
+	<br>
+	<p style="color: #8F7700; width: 100%">
+		We will continue our discussion of virtualization in the next lecture.
+		<br>
+		To see the content in a .docx file, click 
+		<a target="blank" style="color: #0000EE; text-decoration: underline" href="https://drive.google.com/file/d/0B0Bs1Rq9hzqlX0MxeWxFQ1haWXc/view?usp=sharing">here</a>
+		<br>
+		<a style="color: #0000EE; text-decoration: underline" href="#">Go to Top</a>
+	</p>
+	<br>
+	<br>
+</body>
+
+</html>
